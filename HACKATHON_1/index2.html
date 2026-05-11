@@ -284,6 +284,31 @@
   }
 
   .info-row strong { color: var(--accent); }
+  /* Add this CSS inside your <style> section */
+
+.nxt_button {
+    display: block;
+    margin: 30px auto;
+    padding: 14px 32px;
+    background: var(--panel);
+    border: 2px solid var(--green);
+    color: var(--green);
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 0 18px rgba(0, 255, 157, 0.4);
+    transition: all 0.3s ease;
+}
+
+.nxt_button:hover {
+    background: var(--green);
+    color: var(--bg);
+    box-shadow: 0 0 25px rgba(0, 255, 157, 0.8);
+    transform: translateY(-3px);
+}
 </style>
 </head>
 <body>
@@ -453,5 +478,6 @@ function topoSort() {
   `;
 })();
 </script>
+<a href="index3.html"><button class = 'nxt_button'>LEVEL 3</button></a>
 </body>
 </html>
