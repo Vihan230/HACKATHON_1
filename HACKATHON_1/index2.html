@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEVEL 3 — Network Reconstruction</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;500;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050810;
+  --panel: #0a0f1e;
+  --border: #1a2a4a;
+  --accent: #00ffe7;
+  --accent2: #ff4060;
+  --accent3: #ffe100;
+  --accent4: #a855f7;
+  --text: #c8daf0;
+  --dim: #3a5070;
+  --glow: 0 0 18px #00ffe788;
+  --glow2: 0 0 18px #ff406088;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,255,231,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,231,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none; z-index: 0;
+}
+.scanline {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
+  pointer-events: none; z-index: 999;
+}
+header {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 36px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(5,8,16,0.97);
+}
+.logo { font-family: 'Orbitron', monospace; font-size: 1rem; font-weight: 900; color: var(--accent); letter-spacing: 0.2em; text-shadow: var(--glow); }
+.logo span { color: var(--accent2); }
+.status-bar { display: flex; gap: 20px; font-size: 0.65rem; color: var(--dim); }
+.live { color: var(--accent); animation: blink 1.2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+main { position: relative; z-index: 10; max-width: 1300px; margin: 0 auto; padding: 28px 36px 60px; }
+
+.hero {
+  padding: 22px 28px; margin-bottom: 22px;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, #0a0f1e 60%, #0d1520);
+  position: relative; overflow: hidden;
+}
+.hero::after {
+  content: 'LEVEL 3';
+  position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+  font-family: 'Orbitron', monospace; font-size: 4rem; font-weight: 900;
+  opacity: 0.04; pointer-events: none;
+}
+.hero-tag { font-size: 0.6rem; letter-spacing: 0.3em; color: var(--accent2); margin-bottom: 5px; }
+.hero h1 { font-family: 'Orbitron', monospace; font-size: clamp(1rem,2.5vw,1.7rem); font-weight: 700; color: #fff; margin-bottom: 8px; }
+.hi3 { color: var(--accent4); }
+.hero p { font-size: 0.73rem; color: var(--text); line-height: 1.7; max-width: 680px; }
+.alert-box { margin-top: 12px; padding: 10px 16px; border-left: 3px solid var(--accent2); background: rgba(255,64,96,0.07); font-size: 0.68rem; color: #ff8098; font-style: italic; line-height: 1.6; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+@media(max-width:860px){ .two-col { grid-template-columns: 1fr; } }
+
+.panel { border: 1px solid var(--border); background: var(--panel); padding: 16px 20px; position: relative; }
+.panel::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--accent); }
+.panel.p::before { background: var(--accent4); }
+
+.ph { font-family: 'Rajdhani', sans-serif; font-size: 0.92rem; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: var(--accent); }
+.ph.p { color: var(--accent4); }
+.ph .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.5)} }
+
+.logbox { min-height: 80px; max-height: 240px; overflow-y: auto; padding: 12px; border: 1px solid var(--border); background: #060b14; font-size: 0.65rem; line-height: 1.9; margin-bottom: 12px; white-space: pre-wrap; }
+.logbox::-webkit-scrollbar { width: 4px; }
+.logbox::-webkit-scrollbar-thumb { background: var(--accent4); }
+.log-c { color: var(--accent3); }
+.log-i { color: var(--accent2); }
+.log-d { color: #40ff80; }
+.log-t { color: var(--accent4); }
+
+.btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { font-family: 'Share Tech Mono', monospace; font-size: 0.67rem; letter-spacing: 0.1em; padding: 8px 16px; border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
+.btn:hover { background: rgba(0,255,231,0.1); box-shadow: var(--glow); }
+.btn.r { border-color: var(--accent2); color: var(--accent2); }
+.btn.r:hover { background: rgba(255,64,96,0.1); box-shadow: var(--glow2); }
+.btn.p { border-color: var(--accent4); color: var(--accent4); }
+.btn.p:hover { background: rgba(168,85,247,0.1); }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.speed { display: flex; align-items: center; gap: 6px; font-size: 0.6rem; color: var(--dim); }
+input[type=range] { -webkit-appearance:none; width:90px; height:3px; background:var(--border); outline:none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:10px; height:10px; border-radius:50%; background:var(--accent4); cursor:pointer; }
+
+/* ACTIVATION SEQUENCE */
+.sequence-container { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin-top: 12px; padding: 12px; background: rgba(0,255,231,0.05); border: 1px solid var(--border); border-radius: 4px; }
+.sequence-item { padding: 6px 10px; background: var(--panel); border: 1px solid var(--accent); color: var(--accent); font-family: 'Orbitron', monospace; font-size: 0.65rem; border-radius: 4px; transition: all 0.3s; }
+.sequence-item:hover { background: rgba(0,255,231,0.1); box-shadow: var(--glow); }
+.sequence-arrow { color: var(--accent); font-size: 0.8rem; font-weight: bold; }
+@media(max-width:860px){ .sequence-container { flex-direction: column; gap: 4px; } .sequence-arrow { display: none; } }
+
+/* EDGE LIST */
+.edge-list { display: flex; flex-direction: column; gap: 4px; max-height: 320px; overflow-y: auto; }
+.edge-list::-webkit-scrollbar { width: 4px; }
+.edge-list::-webkit-scrollbar-thumb { background: var(--accent4); }
+.edge-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--border); background: #060b14; font-size: 0.67rem; transition: all 0.35s; }
+.edge-item .en { font-family: 'Orbitron', monospace; font-size: 0.72rem; color: #fff; flex: 1; }
+.edge-item .ew { color: var(--accent4); width: 30px; text-align: right; font-weight: bold; }
+.edge-item .estat { font-size: 0.58rem; width: 60px; text-align: right; color: var(--dim); }
+.edge-item.selected { border-color: #40ff80; background: rgba(64,255,128,0.07); }
+.edge-item.rejected { border-color: var(--accent2); background: rgba(255,64,96,0.04); opacity: 0.5; }
+.edge-item.selected .estat { color: #40ff80; }
+.edge-item.rejected .estat { color: var(--accent2); }
+.edge-item.current { border-color: var(--accent3); background: rgba(255,225,0,0.06); }
+
+/* MATRIX TABLE */
+.matrix-wrap { overflow: auto; margin-bottom: 16px; }
+.mtbl { border-collapse: collapse; font-size: 0.58rem; }
+.mtbl th, .mtbl td { border: 1px solid var(--border); padding: 3px 6px; text-align: center; min-width: 28px; }
+.mtbl th { color: var(--dim); background: #060b14; font-weight: normal; }
+.mtbl .rh { color: var(--accent); font-weight: bold; background: #060b14; }
+.mtbl .pos { color: var(--accent4); }
+.mtbl .neg { color: var(--border); font-size: 0.5rem; }
+
+/* RESULT */
+.result { border: 1px solid #40ff80; background: rgba(64,255,128,0.04); padding: 18px 22px; margin-top: 16px; display: none; animation: fadeIn 0.4s ease; }
+.result.show { display: block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.result h3 { font-family:'Orbitron',monospace; font-size:0.78rem; color:#40ff80; margin-bottom:14px; letter-spacing:0.15em; }
+.rchips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.rchip { padding:8px 10px; text-align:center; border:1px solid rgba(64,255,128,0.3); background:rgba(64,255,128,0.04); min-width:72px; }
+.rchip .rk { font-size:0.5rem; color:#60a870; margin-bottom:2px; }
+.rchip .rid { font-family:'Orbitron',monospace; font-size:0.75rem; color:#fff; }
+.rchip .rv { font-size:0.6rem; color:#40ff80; margin-top:2px; }
+.stats { display:flex; gap:22px; flex-wrap:wrap; padding-top:14px; border-top:1px solid rgba(64,255,128,0.2); }
+.stat .lbl { font-size:0.56rem; color:#60a870; letter-spacing:0.15em; margin-bottom:4px; }
+.stat .val { font-family:'Orbitron',monospace; font-size:1.3rem; color:#40ff80; }
+.stat .val.p { color: var(--accent4); }
+.stat .val.sm { font-size: 0.85rem; padding-top: 5px; }
+
+/* UF DISPLAY */
+.uf-display { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.uf-chip { padding: 4px 9px; border: 1px solid var(--border); background: #060b14; font-size: 0.62rem; transition: all 0.3s; }
+.uf-chip .node { font-family: 'Orbitron', monospace; font-size: 0.68rem; color: #fff; }
+.uf-chip .root { font-size: 0.52rem; color: var(--dim); margin-top: 1px; }
+.uf-chip.merged { border-color: #40ff80; background: rgba(64,255,128,0.07); }
+.uf-chip.merged .root { color: #40ff80; }
+
+footer { position: relative; z-index: 10; text-align: center; padding: 18px; border-top: 1px solid var(--border); font-size: 0.6rem; color: var(--dim); letter-spacing: 0.15em; }
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+
+<header>
+  <div class="logo">SMART<span>CITY</span> // CTRL</div>
+  <div class="status-bar">
+    <span class="live">⬤ EMERGENCY MODE</span>
+    <span>LEVEL 3 — NETWORK RECONSTRUCTION</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</header>
+
+<main>
+  <div class="hero" data-lvl="LEVEL 3">
+    <div class="hero-tag">// NETWORK RECONSTRUCTION — KRUSKAL'S ALGORITHM</div>
+    <h1>Minimum Spanning Tree — <span class="hi3">Grid Restoration</span></h1>
+    <p>Rebuild the smart-grid communication backbone connecting all 14 stations at minimum repair cost. Uses Union-Find (disjoint sets) to greedily select cheapest safe edges while avoiding cycles. Final cost is converted to binary.</p>
+    <div class="alert-box">"Rebuild the smart-grid backbone while minimizing total restoration cost. Redundant cyclic pathways must be avoided to preserve network stability. A value of -1 indicates no direct connection exists."</div>
+  </div>
+
+  <!-- MATRIX -->
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph p"><span class="dot"></span>Weighted Connectivity Matrix (14×14)</div>
+    <div class="matrix-wrap"><table class="mtbl" id="wMatrix"></table></div>
+  </div>
+
+  <!-- ACTIVATION SEQUENCE -->
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph"><span class="dot"></span>Valid Activation Sequence — Dependency Resolution</div>
+    <p style="font-size:0.65rem; color:var(--dim); margin-bottom:12px;">Services must be activated in this order to respect all dependencies:</p>
+    <div class="sequence-container">
+      <div class="sequence-item">RC</div>
+      <div class="sequence-arrow">→</div>
+      <div class="sequence-item">QA</div>
+      <div class="sequence-arrow">→</div>
+      <div class="sequence-item">BT</div>
+      <div class="sequence-arrow">→</div>
+      <div class="sequence-item">FM</div>
+      <div class="sequence-arrow">→</div>
+      <div class="sequence-item">PE</div>
+      <div class="sequence-arrow">→</div>
+      <div class="sequence-item">CU</div>
+      <div class="sequence-arrow">→</div>
+      <div class="sequence-item">LM</div>
+      <div class="sequence-arrow">→</div>
+      <div class="sequence-item">KN</div>
+      <div class="sequence-arrow">→</div>
+      <div class="sequence-item">SJ</div>
+      <div class="sequence-arrow">→</div>
+      <div class="sequence-item">VG</div>
+      <div class="sequence-arrow">→</div>
+      <div class="sequence-item">HX</div>
+      <div class="sequence-arrow">→</div>
+      <div class="sequence-item">ZF</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <!-- EDGE LIST -->
+    <div class="panel p">
+      <div class="ph p"><span class="dot"></span>All Valid Edges — Sorted by Cost (Ascending)</div>
+      <div class="edge-list" id="edgeList"></div>
+    </div>
+
+    <!-- LOG + UF -->
+    <div class="panel">
+      <div class="ph"><span class="dot"></span>Union-Find State</div>
+      <div style="font-size:0.6rem;color:var(--dim);margin-bottom:6px">COMPONENT ROOTS:</div>
+      <div class="uf-display" id="ufDisplay"></div>
+      <div class="logbox" id="log3"><span class="log-t">// Press RUN to start Kruskal's MST Algorithm.</span></div>
+      <div class="btns">
+        <button class="btn p" id="runBtn" onclick="startKruskal()">▶ RUN KRUSKAL'S MST</button>
+        <button class="btn r" onclick="resetL3()">↺ RESET</button>
+        <div class="speed">
+          SPEED
+          <input type="range" id="speed3" min="80" max="1500" value="600">
+          <span id="speedVal">600ms</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result" id="result3">
+    <h3>✓ MINIMUM SPANNING TREE CONSTRUCTED — NETWORK RESTORED</h3>
+    <div class="rchips" id="mstEdgeChips"></div>
+    <div class="stats">
+      <div class="stat">
+        <div class="lbl">TOTAL RESTORATION COST</div>
+        <div class="val p" id="mstCost">—</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">BINARY REPRESENTATION</div>
+        <div class="val p sm" id="mstBinary">—</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">EDGES IN MST</div>
+        <div class="val" id="mstEdgeCount">—</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">EDGES REJECTED (CYCLE)</div>
+        <div class="val" style="color:var(--accent2)" id="mstRejected">—</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">ALGORITHM</div>
+        <div class="val sm" style="color:var(--dim)">KRUSKAL'S O(E log E)</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>SMART CITY RECOVERY // LEVEL 3 — KRUSKAL'S MST // CONVERT TOTAL COST TO BINARY TO UNLOCK NEXT LEVEL</footer>
+
+<script>
+// Clock
+setInterval(() => {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', {hour12: false});
+}, 1000);
+
+// Speed slider
+document.getElementById('speed3').addEventListener('input', function() {
+  document.getElementById('speedVal').textContent = this.value + 'ms';
+});
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── DATA ──
+const nodeLabels = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N'];
+
+const wMatrix = [
+//  A   B   C   D   E   F   G   H   I   J   K   L   M   N
+  [ 0,  3,  9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], // A
+  [ 3,  0,  4, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], // B
+  [ 9,  4,  0,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1], // C
+  [-1, 10,  2,  0,  5, -1, -1, -1, -1, -1, -1, -1, -1, -1], // D
+  [-1, -1, -1,  5,  0,  6, 11, -1, -1, -1, -1, -1, -1, -1], // E
+  [-1, -1, -1, -1,  6,  0,  3, -1, -1, -1, -1, -1, -1, -1], // F
+  [-1, -1, -1, -1, 11,  3,  0,  4, -1, -1, -1, -1, -1, -1], // G
+  [-1, -1, -1, -1, -1, -1,  4,  0,  2, -1, -1, -1, -1, -1], // H
+  [-1, -1, -1, -1, -1, -1, -1,  2,  0,  5,  8, -1, -1, -1], // I
+  [-1, -1, -1, -1, -1, -1, -1, -1,  5,  0,  3, -1, -1, -1], // J
+  [-1, -1, -1, -1, -1, -1, -1, -1,  8,  3,  0,  4, -1, -1], // K
+  [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  4,  0,  2, -1], // L
+  [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2,  0,  7], // M
+  [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  7,  0], // N
+];
+
+function buildEdges() {
+  const edges = [];
+  for (let i = 0; i < 14; i++)
+    for (let j = i + 1; j < 14; j++)
+      if (wMatrix[i][j] > 0)
+        edges.push({ u: i, v: j, w: wMatrix[i][j] });
+  return edges.sort((a, b) => a.w - b.w);
+}
+
+// ── UNION-FIND ──
+function makeUF(n) {
+  return { p: Array.from({length: n}, (_, i) => i), r: new Array(n).fill(0) };
+}
+function find(uf, x) {
+  return uf.p[x] === x ? x : (uf.p[x] = find(uf, uf.p[x]));
+}
+function union(uf, x, y) {
+  const rx = find(uf, x), ry = find(uf, y);
+  if (rx === ry) return false;
+  if (uf.r[rx] < uf.r[ry]) uf.p[rx] = ry;
+  else if (uf.r[rx] > uf.r[ry]) uf.p[ry] = rx;
+  else { uf.p[ry] = rx; uf.r[rx]++; }
+  return true;
+}
+
+// ── RENDER MATRIX ──
+function renderMatrix() {
+  const tbl = document.getElementById('wMatrix');
+  let h = '<tr><th></th>';
+  nodeLabels.forEach(n => h += `<th>${n}</th>`);
+  h += '</tr>';
+  wMatrix.forEach((row, i) => {
+    h += `<tr><td class="rh">${nodeLabels[i]}</td>`;
+    row.forEach(v => {
+      if (v === 0) h += `<td class="neg">0</td>`;
+      else if (v === -1) h += `<td class="neg">-1</td>`;
+      else h += `<td class="pos">${v}</td>`;
+    });
+    h += '</tr>';
+  });
+  tbl.innerHTML = h;
+}
+
+// ── RENDER EDGES ──
+function renderEdgeList(edges) {
+  const el = document.getElementById('edgeList');
+  el.innerHTML = '';
+  edges.forEach((e, i) => {
+    const d = document.createElement('div');
+    d.className = 'edge-item'; d.id = 'edge_' + i;
+    d.innerHTML = `<span class="en">${nodeLabels[e.u]} — ${nodeLabels[e.v]}</span><span class="ew">${e.w}</span><span class="estat">PENDING</span>`;
+    el.appendChild(d);
+  });
+}
+
+// ── RENDER UF STATE ──
+function renderUF(uf) {
+  const div = document.getElementById('ufDisplay');
+  div.innerHTML = '';
+  for (let i = 0; i < 14; i++) {
+    const root = find(uf, i);
+    const d = document.createElement('div');
+    d.className = 'uf-chip' + (root !== i ? ' merged' : '');
+    d.innerHTML = `<div class="node">${nodeLabels[i]}</div><div class="root">→${nodeLabels[root]}</div>`;
+    div.appendChild(d);
+  }
+}
+
+// ── INIT ──
+function initL3() {
+  renderMatrix();
+  renderEdgeList(buildEdges());
+  const uf = makeUF(14);
+  renderUF(uf);
+  document.getElementById('log3').innerHTML = '<span class="log-t">// Press RUN to start Kruskal\'s MST Algorithm.</span>';
+  document.getElementById('result3').classList.remove('show');
+  document.getElementById('runBtn').disabled = false;
+}
+
+// ── KRUSKAL'S ALGORITHM ──
+async function startKruskal() {
+  document.getElementById('runBtn').disabled = true;
+  const getDelay = () => +document.getElementById('speed3').value;
+  const edges = buildEdges();
+  const uf = makeUF(14);
+  const mstEdges = [];
+  let total = 0, rejected = 0;
+
+  const lb = document.getElementById('log3');
+  lb.innerHTML = '';
+
+  const log = (msg, cls = 'log-t') => {
+    lb.innerHTML += `<span class="${cls}">${msg}\n</span>`;
+    lb.scrollTop = lb.scrollHeight;
+  };
+
+  log('// ALL EDGES SORTED — BEGINNING KRUSKAL\'S ALGORITHM', 'log-t');
+  log(`// ${edges.length} valid edges found across 14 nodes`, 'log-t');
+  await sleep(getDelay());
+
+  for (let i = 0; i < edges.length; i++) {
+    const e = edges[i];
+    const el = document.getElementById('edge_' + i);
+
+    // Highlight current edge
+    if (el) el.classList.add('current');
+    log(`\n// EXAMINING: ${nodeLabels[e.u]} — ${nodeLabels[e.v]}  cost=${e.w}`, 'log-c');
+    log(`//   Root(${nodeLabels[e.u]}) = ${nodeLabels[find(uf, e.u)]}   Root(${nodeLabels[e.v]}) = ${nodeLabels[find(uf, e.v)]}`, 'log-t');
+    await sleep(getDelay());
+
+    if (union(uf, e.u, e.v)) {
+      mstEdges.push(e);
+      total += e.w;
+      if (el) { el.classList.remove('current'); el.classList.add('selected'); el.querySelector('.estat').textContent = '✓ ADDED'; }
+      log(`//   ✓ ADDED — no cycle. Cumulative cost: ${total}`, 'log-d');
+    } else {
+      rejected++;
+      if (el) { el.classList.remove('current'); el.classList.add('rejected'); el.querySelector('.estat').textContent = '✗ CYCLE'; }
+      log(`//   ✗ REJECTED — same component, would create cycle`, 'log-i');
+    }
+
+    renderUF(uf);
+    await sleep(getDelay() / 2);
+
+    // MST complete when n-1 edges added
+    if (mstEdges.length === 13) break;
+  }
+
+  log(`\n// ══════════════════════════════`, 'log-d');
+  log(`// ✓ MST COMPLETE`, 'log-d');
+  log(`// Total restoration cost : ${total}`, 'log-d');
+  log(`// Binary representation  : ${total.toString(2)}`, 'log-d');
+  log(`// Edges in MST           : ${mstEdges.length}`, 'log-d');
+  log(`// Edges rejected (cycle) : ${rejected}`, 'log-d');
+  log(`// ══════════════════════════════`, 'log-d');
+
+  // Show result panel
+  document.getElementById('mstCost').textContent = total;
+  document.getElementById('mstBinary').textContent = total.toString(2);
+  document.getElementById('mstEdgeCount').textContent = mstEdges.length;
+  document.getElementById('mstRejected').textContent = rejected;
+
+  const mc = document.getElementById('mstEdgeChips');
+  mc.innerHTML = '';
+  mstEdges.forEach((e, idx) => {
+    const d = document.createElement('div'); d.className = 'rchip';
+    d.innerHTML = `<div class="rk">EDGE ${idx + 1}</div><div class="rid">${nodeLabels[e.u]}–${nodeLabels[e.v]}</div><div class="rv">cost: ${e.w}</div>`;
+    mc.appendChild(d);
+  });
+
+  document.getElementById('result3').classList.add('show');
+}
+
+function resetL3() { initL3(); }
+
+// Start
+initL3();
+</script>
+</body>
+</html>

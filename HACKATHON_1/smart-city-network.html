@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City Network Reconstruction System</title>
+    <style>
+        /* ============================================
+           ROOT VARIABLES & GLOBAL STYLES
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #1e3a8a;
+            --light-blue: #dbeafe;
+            --dark-blue: #0f172a;
+            --accent-blue: #0ea5e9;
+            --accent-green: #10b981;
+            --accent-orange: #f97316;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --border-grey: #e5e7eb;
+            --bg-light: #f8fafc;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* ============================================
+           HEADER STYLING
+           ============================================ */
+        header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-blue) 100%);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            animation: slideDown 0.5s ease-out;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* ============================================
+           NAVIGATION BAR
+           ============================================ */
+        nav {
+            background-color: white;
+            border-bottom: 2px solid var(--border-grey);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        nav ul {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0;
+            list-style: none;
+            padding: 0;
+        }
+
+        nav li {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        nav a {
+            display: block;
+            padding: 1rem;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 600;
+            text-align: center;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            background-color: var(--light-blue);
+            border-bottom-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        /* ============================================
+           MAIN CONTAINER & SECTION STYLING
+           ============================================ */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        section {
+            margin-bottom: 3rem;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        section.hidden {
+            display: none;
+        }
+
+        section.visible {
+            display: block;
+        }
+
+        /* ============================================
+           CARD STYLING
+           ============================================ */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .card h2 {
+            color: var(--primary-blue);
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--accent-blue);
+            padding-left: 1rem;
+        }
+
+        .card h3 {
+            color: var(--accent-blue);
+            font-size: 1.3rem;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .card p {
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            line-height: 1.8;
+        }
+
+        /* ============================================
+           BUTTON STYLING
+           ============================================ */
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-blue);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background-color: var(--accent-green);
+        }
+
+        .btn-secondary:hover {
+            background-color: #059669;
+        }
+
+        /* ============================================
+           TABLE STYLING
+           ============================================ */
+        .table-container {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            border: 1px solid var(--border-grey);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+
+        th {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            text-align: center;
+            border: 1px solid var(--border-grey);
+        }
+
+        tr:hover {
+            background-color: var(--light-blue);
+        }
+
+        /* Highlight important cells */
+        .highlight {
+            background-color: #fef3c7;
+            font-weight: 600;
+        }
+
+        .dependency {
+            color: var(--accent-green);
+            font-weight: 700;
+        }
+
+        .no-connection {
+            color: var(--text-light);
+            opacity: 0.5;
+        }
+
+        /* ============================================
+           ACTIVATION SEQUENCE STYLING
+           ============================================ */
+        .sequence-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background-color: var(--light-blue);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-green);
+        }
+
+        .sequence-item {
+            background: white;
+            border: 2px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            min-width: 60px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .sequence-item:hover {
+            background-color: var(--accent-green);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .sequence-arrow {
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            color: var(--accent-green);
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .sequence-arrow {
+                display: none;
+            }
+        }
+
+        /* ============================================
+           NETWORK NODE DIAGRAM (CSS-based)
+           ============================================ */
+        .node-diagram {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--light-blue) 0%, white 100%);
+            border-radius: 8px;
+            border: 2px dashed var(--accent-blue);
+        }
+
+        .node {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border: 3px solid var(--accent-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--primary-blue);
+            font-size: 0.85rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            margin: auto;
+        }
+
+        .node:hover {
+            background-color: var(--accent-blue);
+            color: white;
+            transform: scale(1.15);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* ============================================
+           LEVEL BADGE
+           ============================================ */
+        .level-badge {
+            display: inline-block;
+            background-color: var(--accent-orange);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+        }
+
+        /* ============================================
+           EXPLANATION BOX
+           ============================================ */
+        .explanation {
+            background-color: #f0fdf4;
+            border-left: 4px solid var(--accent-green);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            color: var(--text-dark);
+            line-height: 1.8;
+        }
+
+        .explanation h4 {
+            color: var(--accent-green);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .explanation strong {
+            color: var(--primary-blue);
+        }
+
+        /* ============================================
+           FOOTER STYLING
+           ============================================ */
+        footer {
+            background-color: var(--primary-blue);
+            color: white;
+            text-align: center;
+            padding: 2rem 1rem;
+            margin-top: 3rem;
+        }
+
+        footer p {
+            margin: 0.5rem 0;
+        }
+
+        /* ============================================
+           ANIMATIONS
+           ============================================ */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================
+           RESPONSIVE DESIGN
+           ============================================ */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            header p {
+                font-size: 0.95rem;
+            }
+
+            nav ul {
+                flex-direction: column;
+            }
+
+            nav li {
+                min-width: auto;
+            }
+
+            nav a {
+                border-bottom: none;
+                border-right: 3px solid transparent;
+                padding: 0.75rem;
+            }
+
+            nav a:hover {
+                border-right-color: var(--accent-blue);
+                border-bottom: none;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+
+            .card h2 {
+                font-size: 1.5rem;
+            }
+
+            .table-container {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 0.5rem;
+            }
+
+            .sequence-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .sequence-item {
+                width: 100%;
+            }
+
+            .node-diagram {
+                grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+                gap: 0.5rem;
+            }
+
+            .node {
+                width: 70px;
+                height: 70px;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* ============================================
+           UTILITY CLASSES
+           ============================================ */
+        .mt-2 {
+            margin-top: 1.5rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 1.5rem;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-muted {
+            color: var(--text-light);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- =====================================
+         HEADER
+         ===================================== -->
+    <header>
+        <h1>Smart City Network Reconstruction System</h1>
+        <p>Optimizing Urban Infrastructure Through Advanced Algorithms</p>
+    </header>
+
+    <!-- =====================================
+         NAVIGATION BAR
+         ===================================== -->
+    <nav>
+        <ul>
+            <li><a href="#level1">Level 1: Merge Sort</a></li>
+            <li><a href="#level2">Level 2: Dependencies</a></li>
+            <li><a href="#level3">Level 3: Network</a></li>
+        </ul>
+    </nav>
+
+    <!-- =====================================
+         MAIN CONTENT
+         ===================================== -->
+    <main>
+        <!-- =====================================
+             LEVEL 1: MERGE SORT
+             ===================================== -->
+        <section id="level1" class="visible">
+            <div class="card">
+                <span class="level-badge">LEVEL 1</span>
+                <h2>Merge Sort — Station Ordering</h2>
+                <p>The first stage of network reconstruction involves sorting station identifiers in the correct order using the Merge Sort algorithm.</p>
+
+                <div class="explanation">
+                    <h4>How It Works</h4>
+                    <p>
+                        Station IDs are converted to numeric values based on ASCII values of their letters.
+                        <strong>Merge Sort</strong> is used to arrange them in ascending order while measuring
+                        the disorder level by counting inversions during the merge phase.
+                    </p>
+                </div>
+
+                <h3>Sample Stations & Values</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Station ID</th>
+                                <th>Letter 1 (ASCII)</th>
+                                <th>Letter 2 (ASCII)</th>
+                                <th>Sum (Value)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>RC</td>
+                                <td>82</td>
+                                <td>67</td>
+                                <td class="highlight">149</td>
+                            </tr>
+                            <tr>
+                                <td>QA</td>
+                                <td>81</td>
+                                <td>65</td>
+                                <td class="highlight">146</td>
+                            </tr>
+                            <tr>
+                                <td>BT</td>
+                                <td>66</td>
+                                <td>84</td>
+                                <td class="highlight">150</td>
+                            </tr>
+                            <tr>
+                                <td>FM</td>
+                                <td>70</td>
+                                <td>77</td>
+                                <td class="highlight">147</td>
+                            </tr>
+                            <tr>
+                                <td>PE</td>
+                                <td>80</td>
+                                <td>69</td>
+                                <td class="highlight">149</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="explanation">
+                    <h4>Why Merge Sort?</h4>
+                    <p>
+                        Merge Sort is ideal for counting inversions (disorder level) with O(n log n) efficiency.
+                        This helps identify how corrupted the network ordering has become.
+                    </p>
+                </div>
+
+                <button class="btn">Learn Merge Sort Algorithm</button>
+                <button class="btn btn-secondary">View Full Station List</button>
+            </div>
+        </section>
+
+        <!-- =====================================
+             LEVEL 2: DEPENDENCY RESOLUTION
+             ===================================== -->
+        <section id="level2" class="visible">
+            <div class="card">
+                <span class="level-badge">LEVEL 2</span>
+                <h2>Dependency Resolution — Topological Sort</h2>
+                <p>
+                    Determine the correct activation sequence of services. Services may have dependencies
+                    on other services. A dependency matrix shows which services must start before others.
+                </p>
+
+                <h3>Dependency Matrix (1 = Dependency Exists)</h3>
+                <div class="explanation">
+                    <h4>What This Matrix Means</h4>
+                    <p>
+                        Each <strong>1</strong> indicates that the column service depends on the row service.
+                        For example, if Row RC, Column QA = 1, then QA depends on RC starting first.
+                    </p>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>RC</th>
+                                <th>QA</th>
+                                <th>BT</th>
+                                <th>FM</th>
+                                <th>PE</th>
+                                <th>CU</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>RC</strong></td>
+                                <td>0</td>
+                                <td class="dependency">1</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td><strong>QA</strong></td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td class="dependency">1</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td><strong>BT</strong></td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td class="dependency">1</td>
+                                <td>0</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td><strong>FM</strong></td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td class="dependency">1</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PE</strong></td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td class="dependency">1</td>
+                            </tr>
+                            <tr>
+                                <td><strong>CU</strong></td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Valid Activation Sequence</h3>
+                <p>Based on the dependency analysis, services must be activated in this order:</p>
+                <div class="sequence-container">
+                    <div class="sequence-item">RC</div>
+                    <div class="sequence-arrow">→</div>
+                    <div class="sequence-item">QA</div>
+                    <div class="sequence-arrow">→</div>
+                    <div class="sequence-item">BT</div>
+                    <div class="sequence-arrow">→</div>
+                    <div class="sequence-item">FM</div>
+                    <div class="sequence-arrow">→</div>
+                    <div class="sequence-item">PE</div>
+                    <div class="sequence-arrow">→</div>
+                    <div class="sequence-item">CU</div>
+                    <div class="sequence-arrow">→</div>
+                    <div class="sequence-item">LM</div>
+                    <div class="sequence-arrow">→</div>
+                    <div class="sequence-item">KN</div>
+                </div>
+
+                <div class="explanation">
+                    <h4>Topological Sort Algorithm</h4>
+                    <p>
+                        This sequence ensures <strong>no service starts before its dependencies</strong>.
+                        Topological sorting processes the dependency graph to find a valid linear order
+                        that respects all dependency constraints.
+                    </p>
+                </div>
+
+                <button class="btn">View Full Dependency Graph</button>
+                <button class="btn btn-secondary">Verify Sequence</button>
+            </div>
+        </section>
+
+        <!-- =====================================
+             LEVEL 3: NETWORK RECONSTRUCTION
+             ===================================== -->
+        <section id="level3" class="visible">
+            <div class="card">
+                <span class="level-badge">LEVEL 3</span>
+                <h2>Network Reconstruction — Minimum Spanning Tree</h2>
+                <p>
+                    Reconstruct the network with minimal cost while maintaining full connectivity.
+                    Using a weighted connectivity matrix, we identify the optimal connections.
+                </p>
+
+                <div class="explanation">
+                    <h4>The Challenge</h4>
+                    <p>
+                        We need to <strong>minimize total network cost</strong> while ensuring <strong>all stations are connected</strong>
+                        and <strong>no cycles exist</strong> (forming a tree structure).
+                    </p>
+                </div>
+
+                <h3>Weighted Connectivity Matrix (-1 = No Connection)</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>From/To</th>
+                                <th>RC</th>
+                                <th>QA</th>
+                                <th>BT</th>
+                                <th>FM</th>
+                                <th>PE</th>
+                                <th>CU</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>RC</strong></td>
+                                <td>0</td>
+                                <td class="highlight">5</td>
+                                <td class="no-connection">-1</td>
+                                <td>8</td>
+                                <td class="no-connection">-1</td>
+                                <td>12</td>
+                            </tr>
+                            <tr>
+                                <td><strong>QA</strong></td>
+                                <td class="highlight">5</td>
+                                <td>0</td>
+                                <td class="highlight">7</td>
+                                <td class="no-connection">-1</td>
+                                <td>10</td>
+                                <td class="no-connection">-1</td>
+                            </tr>
+                            <tr>
+                                <td><strong>BT</strong></td>
+                                <td class="no-connection">-1</td>
+                                <td class="highlight">7</td>
+                                <td>0</td>
+                                <td class="highlight">6</td>
+                                <td class="no-connection">-1</td>
+                                <td>9</td>
+                            </tr>
+                            <tr>
+                                <td><strong>FM</strong></td>
+                                <td>8</td>
+                                <td class="no-connection">-1</td>
+                                <td class="highlight">6</td>
+                                <td>0</td>
+                                <td class="highlight">4</td>
+                                <td class="no-connection">-1</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PE</strong></td>
+                                <td class="no-connection">-1</td>
+                                <td>10</td>
+                                <td class="no-connection">-1</td>
+                                <td class="highlight">4</td>
+                                <td>0</td>
+                                <td class="highlight">3</td>
+                            </tr>
+                            <tr>
+                                <td><strong>CU</strong></td>
+                                <td>12</td>
+                                <td class="no-connection">-1</td>
+                                <td>9</td>
+                                <td class="no-connection">-1</td>
+                                <td class="highlight">3</td>
+                                <td>0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="explanation">
+                    <h4>What This Matrix Shows</h4>
+                    <p>
+                        <strong>Positive values:</strong> Connection cost between stations<br>
+                        <strong>-1:</strong> No possible connection (network constraint)<br>
+                        <strong>0:</strong> Self-reference (no cost to same station)
+                    </p>
+                </div>
+
+                <h3>Minimum Spanning Tree Concept</h3>
+                <div class="explanation">
+                    <h4>Goal: Minimize Cost, Avoid Cycles</h4>
+                    <p>
+                        <strong>Kruskal's Algorithm</strong> finds the optimal set of connections:
+                        <ul style="margin: 1rem 0 0 2rem; line-height: 2;">
+                            <li>Sort all edges by weight (cost)</li>
+                            <li>Add edges one by one if they don't create a cycle</li>
+                            <li>Stop when all stations are connected</li>
+                            <li>Result: Minimum total cost with full connectivity</li>
+                        </ul>
+                    </p>
+                </div>
+
+                <h3>Optimal Network Reconstruction</h3>
+                <p>Selected connections (highlighted in matrix above):</p>
+                <div class="node-diagram">
+                    <div class="node">RC</div>
+                    <div class="node">QA</div>
+                    <div class="node">BT</div>
+                    <div class="node">FM</div>
+                    <div class="node">PE</div>
+                    <div class="node">CU</div>
+                </div>
+
+                <div class="explanation">
+                    <h4>Example MST Edges (Minimum Cost = 28)</h4>
+                    <p>
+                        PE ↔ CU (Cost: 3)<br>
+                        FM ↔ PE (Cost: 4)<br>
+                        BT ↔ FM (Cost: 6)<br>
+                        QA ↔ BT (Cost: 7)<br>
+                        RC ↔ QA (Cost: 5)<br>
+                        <strong>Total Cost: 25</strong><br><br>
+                        All 6 stations connected with no cycles!
+                    </p>
+                </div>
+
+                <button class="btn">Run Kruskal's Algorithm</button>
+                <button class="btn btn-secondary">View Edge List</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- =====================================
+         FOOTER
+         ===================================== -->
+    <footer>
+        <p>&copy; 2024 Smart City Network Reconstruction System</p>
+        <p>Using Advanced Algorithms: Merge Sort, Topological Sort, Minimum Spanning Tree (Kruskal)</p>
+    </footer>
+</body>
+</html>
