@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEVEL 1 — Station Registry Recovery</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #030a12;
+    --panel: #060f1c;
+    --border: #0d3a5c;
+    --accent: #00e5ff;
+    --accent2: #ff6b35;
+    --green: #00ff9d;
+    --red: #ff2d55;
+    --text: #c8dff0;
+    --dim: #3a6080;
+    --glow: 0 0 18px rgba(0,229,255,0.35);
+    --glow2: 0 0 18px rgba(255,107,53,0.35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .scanline {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: rgba(0,229,255,0.12);
+    animation: scan 6s linear infinite;
+    z-index: 1;
+    pointer-events: none;
+  }
+  @keyframes scan { from{top:0} to{top:100vh} }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 30px 20px 60px;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeDown 0.8s ease;
+  }
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:none} }
+
+  .level-badge {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 16px;
+    margin-bottom: 16px;
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+  @keyframes pulse-border {
+    0%,100% { box-shadow: 0 0 8px rgba(0,229,255,0.2); }
+    50% { box-shadow: 0 0 20px rgba(0,229,255,0.6); }
+  }
+
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(22px, 4vw, 42px);
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(0,229,255,0.5);
+    line-height: 1.2;
+  }
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    margin-top: 10px;
+  }
+
+  /* Alert banner */
+  .alert {
+    background: rgba(255,45,85,0.08);
+    border: 1px solid rgba(255,45,85,0.4);
+    border-left: 3px solid var(--red);
+    padding: 14px 20px;
+    margin-bottom: 30px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: #ff8aaa;
+    line-height: 1.6;
+    animation: fadeIn 1s ease 0.3s both;
+  }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  /* Panels */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+    animation: fadeIn 0.6s ease both;
+  }
+  .panel:nth-child(1) { animation-delay: 0.2s; }
+  .panel:nth-child(2) { animation-delay: 0.35s; }
+  .panel:nth-child(3) { animation-delay: 0.5s; }
+  .panel:nth-child(4) { animation-delay: 0.65s; }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,229,255,0.03);
+  }
+  .panel-header .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: var(--glow);
+    animation: blink 1.5s ease-in-out infinite;
+  }
+  .dot.orange { background: var(--accent2); box-shadow: var(--glow2); }
+  .dot.green { background: var(--green); box-shadow: 0 0 12px rgba(0,255,157,0.5); animation-delay: 0.5s; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .panel-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .panel-title.orange { color: var(--accent2); }
+  .panel-title.green { color: var(--green); }
+
+  .panel-body { padding: 24px 20px; }
+
+  /* Formula display */
+  .formula {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 20px;
+    background: rgba(0,229,255,0.04);
+    border: 1px dashed rgba(0,229,255,0.2);
+    margin-bottom: 20px;
+  }
+  .formula-part {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    color: var(--accent);
+    text-shadow: var(--glow);
+  }
+  .formula-eq { color: var(--dim); font-size: 18px; }
+
+  /* Station grid */
+  .stations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+  }
+
+  .station-card {
+    position: relative;
+    border: 1px solid var(--border);
+    padding: 14px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    overflow: hidden;
+  }
+  .station-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,229,255,0.05), transparent);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .station-card:hover { border-color: var(--accent); box-shadow: var(--glow); transform: translateY(-2px); }
+  .station-card:hover::before { opacity: 1; }
+
+  .station-id {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .station-value {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 22px;
+    color: var(--accent);
+    text-shadow: var(--glow);
+  }
+  .station-breakdown {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--dim);
+    margin-top: 4px;
+  }
+  .station-rank {
+    position: absolute;
+    top: 5px; right: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--dim);
+  }
+
+  /* Sorted list */
+  .sorted-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sorted-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 16px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+  .sorted-item:hover { border-color: var(--green); box-shadow: 0 0 12px rgba(0,255,157,0.15); }
+  .sorted-item .pos {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    width: 24px;
+  }
+  .sorted-item .sid {
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--green);
+    width: 40px;
+  }
+  .sorted-item .val {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    color: var(--accent);
+    width: 50px;
+  }
+  .bar-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), var(--accent));
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  /* Inversion counter */
+  .inversion-display {
+    text-align: center;
+    padding: 30px;
+  }
+  .inv-number {
+    font-family: 'Orbitron', monospace;
+    font-size: 72px;
+    font-weight: 900;
+    color: var(--accent2);
+    text-shadow: 0 0 40px rgba(255,107,53,0.6), 0 0 80px rgba(255,107,53,0.3);
+    line-height: 1;
+    animation: countUp 1.5s ease;
+  }
+  @keyframes countUp {
+    from { opacity: 0; transform: scale(0.5); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .inv-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--dim);
+    margin-top: 10px;
+    text-transform: uppercase;
+  }
+  .disorder-bar {
+    margin: 20px auto;
+    max-width: 400px;
+    height: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .disorder-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), var(--accent2), var(--red));
+    border-radius: 4px;
+    width: 0%;
+    transition: width 1.5s ease;
+  }
+  .disorder-legend {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--dim);
+    margin-top: 6px;
+  }
+
+  /* Inversion pairs */
+  .inv-explanation {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    line-height: 1.8;
+    background: rgba(0,0,0,0.3);
+    padding: 14px;
+    border-left: 2px solid var(--accent2);
+    margin-top: 16px;
+  }
+
+  /* Algorithm note */
+  .algo-note {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 16px;
+    background: rgba(0,229,255,0.03);
+    border: 1px dashed rgba(0,229,255,0.15);
+    margin-top: 16px;
+  }
+  .algo-icon {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .algo-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    line-height: 1.8;
+  }
+  .algo-text b { color: var(--accent); }
+
+  /* Footer */
+  .footer-note {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    padding: 20px;
+    border-top: 1px solid var(--border);
+    margin-top: 30px;
+    letter-spacing: 1px;
+  }
+  .footer-note span { color: var(--accent); }
+
+  /* Tooltip */
+  .tooltip {
+    position: absolute;
+    bottom: 105%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0a1a2a;
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 10;
+  }
+  .station-card:hover .tooltip { opacity: 1; }
+
+  @media (max-width: 600px) {
+    .stations-grid { grid-template-columns: repeat(3, 1fr); }
+    .inv-number { font-size: 48px; }
+  }
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="container">
+
+  <header>
+    <div class="level-badge">⬡ LEVEL 1 — RECOVERY PROTOCOL</div>
+    <h1>Station <span>Registry</span> Recovery</h1>
+    <p class="subtitle">SIGNAL ORDERING &amp; DISORDER ANALYSIS SYSTEM</p>
+  </header>
+
+  <div class="alert">
+    ⚠ SYSTEM ALERT — Station registry corruption detected. Signal ordering integrity has been compromised.
+    Converting all station identifiers into numerical form and restoring correct sequence before synchronization can continue.
+  </div>
+
+  <!-- Panel 1: Signal Value Formula -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="dot"></div>
+      <div class="panel-title">Signal Value Computation</div>
+    </div>
+    <div class="panel-body">
+      <div class="formula">
+        <span class="formula-part">VALUE</span>
+        <span class="formula-eq">=</span>
+        <span class="formula-part">ASCII(letter₁)</span>
+        <span class="formula-eq">+</span>
+        <span class="formula-part">ASCII(letter₂)</span>
+      </div>
+      <p style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);text-align:center;">
+        Hover any station card to reveal its ASCII breakdown
+      </p>
+    </div>
+  </div>
+
+  <!-- Panel 2: Corrupted Registry -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="dot orange"></div>
+      <div class="panel-title orange">Corrupted Registry — Original Order</div>
+    </div>
+    <div class="panel-body">
+      <div class="stations-grid" id="corruptedGrid"></div>
+    </div>
+  </div>
+
+  <!-- Panel 3: Restored Registry -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="dot green"></div>
+      <div class="panel-title green">Restored Registry — Ascending Order</div>
+    </div>
+    <div class="panel-body">
+      <div class="sorted-list" id="sortedList"></div>
+    </div>
+  </div>
+
+  <!-- Panel 4: Disorder Analysis -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="dot orange"></div>
+      <div class="panel-title orange">Disorder Analysis — Inversion Count</div>
+    </div>
+    <div class="panel-body">
+      <div class="inversion-display">
+        <div class="inv-number" id="invCount">—</div>
+        <div class="inv-label">Total Inversions Detected</div>
+        <div class="disorder-bar">
+          <div class="disorder-fill" id="disorderFill"></div>
+        </div>
+        <div class="disorder-legend">
+          <span>ORDERED</span>
+          <span>MODERATE</span>
+          <span>CHAOTIC</span>
+        </div>
+      </div>
+      <div class="inv-explanation" id="invExplanation"></div>
+      <div class="algo-note">
+        <div class="algo-icon">⟳</div>
+        <div class="algo-text">
+          <b>Algorithm:</b> Merge Sort — recursively divides data into smaller sections, solves each independently,
+          then combines them while counting misplaced pairs. Time complexity: <b>O(n log n)</b>.
+          An inversion exists whenever <b>i &lt; j</b> and <b>Value(i) &gt; Value(j)</b>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    ✓ Use the final sorted station order as the station layout reference for the <span>dependency matrix in Level 2</span>.
+  </div>
+
+</div>
+
+<script>
+  const stations = [
+    "QA","FM","BT","HX","DP","AK","RC","LM","ZF","KN","PE","CU","SJ","VG"
+  ];
+
+  function ascii(c) { return c.charCodeAt(0); }
+  function value(s) { return ascii(s[0]) + ascii(s[1]); }
+
+  // Build value map
+  const stationData = stations.map(s => ({
+    id: s,
+    v: value(s),
+    a1: ascii(s[0]),
+    a2: ascii(s[1])
+  }));
+
+  const minV = Math.min(...stationData.map(d => d.v));
+  const maxV = Math.max(...stationData.map(d => d.v));
+
+  // --- Corrupted Grid ---
+  const grid = document.getElementById('corruptedGrid');
+  stationData.forEach((d, i) => {
+    const card = document.createElement('div');
+    card.className = 'station-card';
+    card.style.animationDelay = (i * 0.05) + 's';
+    card.innerHTML = `
+      <div class="station-rank">#${i+1}</div>
+      <div class="station-id">${d.id}</div>
+      <div class="station-value">${d.v}</div>
+      <div class="station-breakdown">${d.a1} + ${d.a2}</div>
+      <div class="tooltip">${d.id[0]}→${d.a1}  ${d.id[1]}→${d.a2}  Σ=${d.v}</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // --- Sorted List ---
+  const sorted = [...stationData].sort((a, b) => a.v - b.v || a.id.localeCompare(b.id));
+  const sortedList = document.getElementById('sortedList');
+  sorted.forEach((d, i) => {
+    const pct = ((d.v - minV) / (maxV - minV)) * 100;
+    const item = document.createElement('div');
+    item.className = 'sorted-item';
+    item.style.animationDelay = (0.5 + i * 0.05) + 's';
+    item.innerHTML = `
+      <div class="pos">${String(i+1).padStart(2,'0')}</div>
+      <div class="sid">${d.id}</div>
+      <div class="val">${d.v}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);width:80px;text-align:right">${d.id[0]}(${d.a1})+${d.id[1]}(${d.a2})</div>
+    `;
+    sortedList.appendChild(item);
+  });
+
+  // --- Inversion Count (Merge Sort) ---
+  function mergeCount(arr) {
+    if (arr.length <= 1) return { arr, count: 0 };
+    const mid = Math.floor(arr.length / 2);
+    const left = mergeCount(arr.slice(0, mid));
+    const right = mergeCount(arr.slice(mid));
+    let i = 0, j = 0, count = left.count + right.count;
+    const merged = [];
+    while (i < left.arr.length && j < right.arr.length) {
+      if (left.arr[i].v <= right.arr[j].v) {
+        merged.push(left.arr[i++]);
+      } else {
+        count += left.arr.length - i;
+        merged.push(right.arr[j++]);
+      }
+    }
+    return { arr: [...merged, ...left.arr.slice(i), ...right.arr.slice(j)], count };
+  }
+
+  const { count: inversions } = mergeCount([...stationData]);
+
+  // Max possible inversions for n=14 is n*(n-1)/2 = 91
+  const maxInv = 14 * 13 / 2;
+  const disorderPct = (inversions / maxInv) * 100;
+
+  setTimeout(() => {
+    document.getElementById('invCount').textContent = inversions;
+    document.getElementById('disorderFill').style.width = disorderPct.toFixed(1) + '%';
+  }, 300);
+
+  // Inversion explanation
+  let pairs = [];
+  for (let i = 0; i < stationData.length; i++) {
+    for (let j = i+1; j < stationData.length; j++) {
+      if (stationData[i].v > stationData[j].v) {
+        pairs.push(`(${stationData[i].id}:${stationData[i].v} > ${stationData[j].id}:${stationData[j].v})`);
+      }
+    }
+  }
+  const shown = pairs.slice(0, 12);
+  const extra = pairs.length - shown.length;
+  document.getElementById('invExplanation').innerHTML =
+    `Sample inversion pairs detected:<br>${shown.join('  ·  ')}${extra > 0 ? `<br>... and ${extra} more` : ''}`;
+
+</script>
+</body>
+</html>
