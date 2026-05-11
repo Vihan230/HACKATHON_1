@@ -406,14 +406,141 @@
   }
   .station-card:hover .tooltip { opacity: 1; }
 
-  @media (max-width: 600px) {
-    .stations-grid { grid-template-columns: repeat(3, 1fr); }
-    .inv-number { font-size: 48px; }
+  /* Sorting Animation */
+  .sorting-active .station-card {
+    transition: all 0.3s ease;
+  }
+  .station-card.swapping {
+    background: rgba(255,107,53,0.1);
+    border-color: var(--accent2);
+    box-shadow: var(--glow2);
+    transform: scale(1.05);
+  }
+  .station-card.comparing {
+    background: rgba(0,229,255,0.1);
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+  }
+  .station-card.sorted {
+    background: rgba(0,255,157,0.1);
+    border-color: var(--green);
+    box-shadow: 0 0 12px rgba(0,255,157,0.5);
+  }
+
+  .sort-button {
+    display: inline-block;
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 12px 24px;
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 20px 10px 20px 0;
+    box-shadow: var(--glow);
+  }
+  .sort-button:hover {
+    background: var(--accent);
+    color: var(--bg);
+    box-shadow: 0 0 25px rgba(0,229,255,0.8);
+    transform: translateY(-2px);
+  }
+  .sort-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .reset-button {
+    display: inline-block;
+    background: var(--panel);
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    padding: 12px 24px;
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 20px 0;
+    box-shadow: var(--glow2);
+  }
+  .reset-button:hover {
+    background: var(--accent2);
+    color: var(--bg);
+    box-shadow: 0 0 25px rgba(255,107,53,0.8);
+    transform: translateY(-2px);
+  }
+
+  /* Progress indicator */
+  .progress-container {
+    margin: 20px 0;
+    text-align: center;
+  }
+  .progress-bar {
+    width: 100%;
+    max-width: 400px;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 10px auto;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .progress-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--dim);
+  }
+
+  /* Swap animation */
+  @keyframes swapLeft {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(-20px) scale(1.1); }
+    100% { transform: translateX(0); }
+  }
+  @keyframes swapRight {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(20px) scale(1.1); }
+    100% { transform: translateX(0); }
+  }
+  .swap-left { animation: swapLeft 0.6s ease; }
+  .swap-right { animation: swapRight 0.6s ease; }
+
+  /* Particle effects */
+  .particles {
+    position: fixed;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    animation: particleFloat 2.5s ease-out forwards;
+    pointer-events: none;
+  }
+  @keyframes particleFloat {
+    0% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+    50% { opacity: 0.8; transform: translateY(-50px) scale(1.2) rotate(180deg); }
+    100% { opacity: 0; transform: translateY(var(--tx, -100px)) scale(0) rotate(360deg); }
   }
 </style>
 </head>
 <body>
 <div class="scanline"></div>
+<div class="particles" id="particles"></div>
 <div class="container">
 
   <header>
@@ -454,7 +581,18 @@
       <div class="panel-title orange">Corrupted Registry — Original Order</div>
     </div>
     <div class="panel-body">
-      <div class="stations-grid" id="corruptedGrid"></div>
+      <div class="progress-container">
+        <button class="sort-button" id="sortButton">▶ START SORTING PROCESS</button>
+        <button class="reset-button" id="resetButton">⟲ RESET REGISTRY</button>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text" id="progressText">Ready to begin sorting algorithm</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);margin-top:8px;">
+          Keyboard: SPACE to start • R to reset
+        </div>
+      </div>
+      <div class="stations-grid sorting-active" id="corruptedGrid"></div>
     </div>
   </div>
 
@@ -492,8 +630,9 @@
       <div class="algo-note">
         <div class="algo-icon">⟳</div>
         <div class="algo-text">
-          <b>Algorithm:</b> Merge Sort — recursively divides data into smaller sections, solves each independently,
-          then combines them while counting misplaced pairs. Time complexity: <b>O(n log n)</b>.
+          <b>Algorithm:</b> Merge Sort — recursively divides data into smaller sections, 
+          sorts each independently, then merges them back together while maintaining order.
+          Time complexity: <b>O(n log n)</b> guaranteed. Stable sort preserves relative order of equal elements.
           An inversion exists whenever <b>i &lt; j</b> and <b>Value(i) &gt; Value(j)</b>.
         </div>
       </div>
@@ -525,83 +664,324 @@
   const minV = Math.min(...stationData.map(d => d.v));
   const maxV = Math.max(...stationData.map(d => d.v));
 
-  // --- Corrupted Grid ---
+  let currentData = [...stationData];
+  let sortedData = [...stationData].sort((a, b) => a.v - b.v || a.id.localeCompare(b.id));
+  let isSorting = false;
+  let sortStep = 0;
+  let totalSteps = 0;
+
   const grid = document.getElementById('corruptedGrid');
-  stationData.forEach((d, i) => {
-    const card = document.createElement('div');
-    card.className = 'station-card';
-    card.style.animationDelay = (i * 0.05) + 's';
-    card.innerHTML = `
-      <div class="station-rank">#${i+1}</div>
-      <div class="station-id">${d.id}</div>
-      <div class="station-value">${d.v}</div>
-      <div class="station-breakdown">${d.a1} + ${d.a2}</div>
-      <div class="tooltip">${d.id[0]}→${d.a1}  ${d.id[1]}→${d.a2}  Σ=${d.v}</div>
-    `;
-    grid.appendChild(card);
-  });
-
-  // --- Sorted List ---
-  const sorted = [...stationData].sort((a, b) => a.v - b.v || a.id.localeCompare(b.id));
   const sortedList = document.getElementById('sortedList');
-  sorted.forEach((d, i) => {
-    const pct = ((d.v - minV) / (maxV - minV)) * 100;
-    const item = document.createElement('div');
-    item.className = 'sorted-item';
-    item.style.animationDelay = (0.5 + i * 0.05) + 's';
-    item.innerHTML = `
-      <div class="pos">${String(i+1).padStart(2,'0')}</div>
-      <div class="sid">${d.id}</div>
-      <div class="val">${d.v}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);width:80px;text-align:right">${d.id[0]}(${d.a1})+${d.id[1]}(${d.a2})</div>
-    `;
-    sortedList.appendChild(item);
+  const sortButton = document.getElementById('sortButton');
+  const progressFill = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+  const invCount = document.getElementById('invCount');
+  const disorderFill = document.getElementById('disorderFill');
+  const resetButton = document.getElementById('resetButton');
+
+  // Reset function
+  function resetRegistry() {
+    currentData = [...stationData];
+    sortStep = 0;
+    isSorting = false;
+    buildGrid();
+    sortedList.innerHTML = '';
+    updateInversions();
+    progressFill.style.width = '0%';
+    progressText.textContent = 'Ready to begin sorting algorithm';
+    sortButton.textContent = '▶ START SORTING PROCESS';
+    sortButton.disabled = false;
+    resetButton.disabled = false;
+  }
+
+  // Create particle effect
+  function createParticles(x, y) {
+    const colors = ['#00e5ff', '#ff6b35', '#00ff9d', '#ff2d55'];
+    for (let i = 0; i < 12; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.left = (x + (Math.random() - 0.5) * 100) + 'px';
+      particle.style.top = (y + (Math.random() - 0.5) * 100) + 'px';
+      particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+      particle.style.setProperty('--tx', (Math.random() - 0.5) * 200 + 'px');
+      particle.style.setProperty('--delay', Math.random() * 0.5 + 's');
+      particle.style.animationDelay = `var(--delay)`;
+      particlesContainer.appendChild(particle);
+      setTimeout(() => particle.remove(), 2500);
+    }
+  }
+
+  // Build initial grid
+  function buildGrid() {
+    grid.innerHTML = '';
+    currentData.forEach((d, i) => {
+      const card = document.createElement('div');
+      card.className = 'station-card';
+      card.dataset.index = i;
+      card.style.animationDelay = (i * 0.05) + 's';
+      card.innerHTML = `
+        <div class="station-rank">#${i+1}</div>
+        <div class="station-id">${d.id}</div>
+        <div class="station-value">${d.v}</div>
+        <div class="station-breakdown">${d.a1} + ${d.a2}</div>
+        <div class="tooltip">${d.id[0]}→${d.a1}  ${d.id[1]}→${d.a2}  Σ=${d.v}</div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  // Build sorted list
+  function buildSortedList() {
+    sortedList.innerHTML = '';
+    sortedData.forEach((d, i) => {
+      const pct = ((d.v - minV) / (maxV - minV)) * 100;
+      const item = document.createElement('div');
+      item.className = 'sorted-item';
+      item.style.animationDelay = (0.5 + i * 0.05) + 's';
+      item.innerHTML = `
+        <div class="pos">${String(i+1).padStart(2,'0')}</div>
+        <div class="sid">${d.id}</div>
+        <div class="val">${d.v}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);width:80px;text-align:right">${d.id[0]}(${d.a1})+${d.id[1]}(${d.a2})</div>
+      `;
+      sortedList.appendChild(item);
+    });
+  }
+
+  // Calculate current inversions
+  function calculateInversions(arr) {
+    let count = 0;
+    for (let i = 0; i < arr.length; i++) {
+      for (let j = i + 1; j < arr.length; j++) {
+        if (arr[i].v > arr[j].v) count++;
+      }
+    }
+    return count;
+  }
+
+  // Update inversion display
+  function updateInversions() {
+    const inversions = calculateInversions(currentData);
+    const maxInv = 14 * 13 / 2;
+    const disorderPct = (inversions / maxInv) * 100;
+
+    invCount.textContent = inversions;
+    disorderFill.style.width = disorderPct.toFixed(1) + '%';
+
+    // Update explanation
+    let pairs = [];
+    for (let i = 0; i < currentData.length; i++) {
+      for (let j = i+1; j < currentData.length; j++) {
+        if (currentData[i].v > currentData[j].v) {
+          pairs.push(`(${currentData[i].id}:${currentData[i].v} > ${currentData[j].id}:${currentData[j].v})`);
+        }
+      }
+    }
+    const shown = pairs.slice(0, 12);
+    const extra = pairs.length - shown.length;
+    document.getElementById('invExplanation').innerHTML =
+      `Sample inversion pairs detected:<br>${shown.join('  ·  ')}${extra > 0 ? `<br>... and ${extra} more` : ''}`;
+  }
+
+  // Merge sort with animation
+  async function mergeSortWithAnimation(left = 0, right = currentData.length - 1) {
+    if (left >= right) return;
+
+    const mid = Math.floor((left + right) / 2);
+    
+    // Sort left half
+    await mergeSortWithAnimation(left, mid);
+    
+    // Sort right half
+    await mergeSortWithAnimation(mid + 1, right);
+    
+    // Merge the two halves
+    await merge(left, mid, right);
+  }
+
+  async function merge(left, mid, right) {
+    const leftArr = [];
+    const rightArr = [];
+
+    // Copy left half
+    for (let i = left; i <= mid; i++) {
+      leftArr.push({ ...currentData[i], origIndex: i });
+    }
+
+    // Copy right half
+    for (let i = mid + 1; i <= right; i++) {
+      rightArr.push({ ...currentData[i], origIndex: i });
+    }
+
+    let i = 0, j = 0, k = left;
+
+    // Merge process
+    while (i < leftArr.length && j < rightArr.length) {
+      let cards = Array.from(grid.children);
+      const leftItem = leftArr[i];
+      const rightItem = rightArr[j];
+
+      // Highlight items being compared
+      cards[left + i].classList.add('comparing');
+      cards[mid + 1 + j].classList.add('comparing');
+
+      progressText.textContent = `Comparing ${leftItem.id} (${leftItem.v}) with ${rightItem.id} (${rightItem.v})`;
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      if (leftItem.v <= rightItem.v) {
+        currentData[k] = leftItem;
+        
+        // Update card at position k
+        const d = currentData[k];
+        cards[k].innerHTML = `
+          <div class="station-rank">#${k+1}</div>
+          <div class="station-id">${d.id}</div>
+          <div class="station-value">${d.v}</div>
+          <div class="station-breakdown">${d.a1} + ${d.a2}</div>
+          <div class="tooltip">${d.id[0]}→${d.a1}  ${d.id[1]}→${d.a2}  Σ=${d.v}</div>
+        `;
+        
+        progressText.textContent = `Placing ${leftItem.id} at position ${k}`;
+        cards[k].classList.add('sorted');
+        
+        i++;
+      } else {
+        currentData[k] = rightItem;
+        
+        // Update card at position k
+        const d = currentData[k];
+        cards[k].innerHTML = `
+          <div class="station-rank">#${k+1}</div>
+          <div class="station-id">${d.id}</div>
+          <div class="station-value">${d.v}</div>
+          <div class="station-breakdown">${d.a1} + ${d.a2}</div>
+          <div class="tooltip">${d.id[0]}→${d.a1}  ${d.id[1]}→${d.a2}  Σ=${d.v}</div>
+        `;
+        
+        progressText.textContent = `Placing ${rightItem.id} at position ${k}`;
+        cards[k].classList.add('sorted');
+        
+        j++;
+      }
+
+      k++;
+      sortStep++;
+      progressFill.style.width = Math.min(100, ((sortStep / totalSteps) * 100)) + '%';
+
+      cards = Array.from(grid.children);
+      cards.forEach(card => card.classList.remove('comparing'));
+      await new Promise(resolve => setTimeout(resolve, 80));
+    }
+
+    // Copy remaining elements from left array
+    while (i < leftArr.length) {
+      currentData[k] = leftArr[i];
+      
+      let cards = Array.from(grid.children);
+      const d = currentData[k];
+      cards[k].innerHTML = `
+        <div class="station-rank">#${k+1}</div>
+        <div class="station-id">${d.id}</div>
+        <div class="station-value">${d.v}</div>
+        <div class="station-breakdown">${d.a1} + ${d.a2}</div>
+        <div class="tooltip">${d.id[0]}→${d.a1}  ${d.id[1]}→${d.a2}  Σ=${d.v}</div>
+      `;
+      
+      cards[k].classList.add('sorted');
+      progressText.textContent = `Placing remaining ${leftArr[i].id} at position ${k}`;
+      
+      i++;
+      k++;
+      sortStep++;
+      progressFill.style.width = Math.min(100, ((sortStep / totalSteps) * 100)) + '%';
+
+      await new Promise(resolve => setTimeout(resolve, 80));
+    }
+
+    // Copy remaining elements from right array
+    while (j < rightArr.length) {
+      currentData[k] = rightArr[j];
+      
+      let cards = Array.from(grid.children);
+      const d = currentData[k];
+      cards[k].innerHTML = `
+        <div class="station-rank">#${k+1}</div>
+        <div class="station-id">${d.id}</div>
+        <div class="station-value">${d.v}</div>
+        <div class="station-breakdown">${d.a1} + ${d.a2}</div>
+        <div class="tooltip">${d.id[0]}→${d.a1}  ${d.id[1]}→${d.a2}  Σ=${d.v}</div>
+      `;
+      
+      cards[k].classList.add('sorted');
+      progressText.textContent = `Placing remaining ${rightArr[j].id} at position ${k}`;
+      
+      j++;
+      k++;
+      sortStep++;
+      progressFill.style.width = Math.min(100, ((sortStep / totalSteps) * 100)) + '%';
+
+      await new Promise(resolve => setTimeout(resolve, 80));
+    }
+
+    updateInversions();
+  }
+
+  // Main sorting function
+  async function startSorting() {
+    isSorting = true;
+    sortButton.disabled = true;
+    sortButton.textContent = '⟳ MERGE SORT IN PROGRESS';
+
+    sortStep = 0;
+    totalSteps = currentData.length * Math.log2(currentData.length); // Approximate steps for merge sort
+
+    await mergeSortWithAnimation();
+
+    // Mark all as sorted
+    const cards = Array.from(grid.children);
+    cards.forEach(card => card.classList.add('sorted'));
+
+    // Update sorted list
+    buildSortedList();
+
+    progressText.textContent = 'Merge sort complete! Registry restored.';
+    progressFill.style.width = '100%';
+    sortButton.textContent = '✓ SORTING COMPLETE';
+    sortButton.disabled = true;
+
+    isSorting = false;
+  }
+
+  // Initialize
+  buildGrid();
+  buildSortedList();
+  updateInversions();
+
+  // Calculate total steps for progress
+  totalSteps = Math.floor(currentData.length * Math.log2(currentData.length)); // Approximate steps for quicksort
+
+  // Event listeners
+  sortButton.addEventListener('click', () => {
+    if (!isSorting) {
+      startSorting();
+    }
   });
 
-  // --- Inversion Count (Merge Sort) ---
-  function mergeCount(arr) {
-    if (arr.length <= 1) return { arr, count: 0 };
-    const mid = Math.floor(arr.length / 2);
-    const left = mergeCount(arr.slice(0, mid));
-    const right = mergeCount(arr.slice(mid));
-    let i = 0, j = 0, count = left.count + right.count;
-    const merged = [];
-    while (i < left.arr.length && j < right.arr.length) {
-      if (left.arr[i].v <= right.arr[j].v) {
-        merged.push(left.arr[i++]);
-      } else {
-        count += left.arr.length - i;
-        merged.push(right.arr[j++]);
+  resetButton.addEventListener('click', resetRegistry);
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (!isSorting && !sortButton.disabled) {
+        startSorting();
       }
+    } else if (e.code === 'KeyR') {
+      e.preventDefault();
+      resetRegistry();
     }
-    return { arr: [...merged, ...left.arr.slice(i), ...right.arr.slice(j)], count };
-  }
-
-  const { count: inversions } = mergeCount([...stationData]);
-
-  // Max possible inversions for n=14 is n*(n-1)/2 = 91
-  const maxInv = 14 * 13 / 2;
-  const disorderPct = (inversions / maxInv) * 100;
-
-  setTimeout(() => {
-    document.getElementById('invCount').textContent = inversions;
-    document.getElementById('disorderFill').style.width = disorderPct.toFixed(1) + '%';
-  }, 300);
-
-  // Inversion explanation
-  let pairs = [];
-  for (let i = 0; i < stationData.length; i++) {
-    for (let j = i+1; j < stationData.length; j++) {
-      if (stationData[i].v > stationData[j].v) {
-        pairs.push(`(${stationData[i].id}:${stationData[i].v} > ${stationData[j].id}:${stationData[j].v})`);
-      }
-    }
-  }
-  const shown = pairs.slice(0, 12);
-  const extra = pairs.length - shown.length;
-  document.getElementById('invExplanation').innerHTML =
-    `Sample inversion pairs detected:<br>${shown.join('  ·  ')}${extra > 0 ? `<br>... and ${extra} more` : ''}`;
+  });
 
 </script>
 </body>
