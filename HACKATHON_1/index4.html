@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Level 4 — The Grid of Vital Energy</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020b08;
+    --panel: #071a10;
+    --border: #0d4a20;
+    --accent: #00ff88;
+    --accent2: #00d4ff;
+    --warn: #ffaa00;
+    --danger: #ff4444;
+    --text: #b8f0d0;
+    --dim: #3a7a55;
+    --glow: 0 0 14px rgba(0,255,136,0.5);
+    --glow2: 0 0 14px rgba(0,212,255,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    padding: 30px 20px 60px;
+    background-image:
+      radial-gradient(ellipse at 10% 20%, rgba(0,80,40,0.18) 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 80%, rgba(0,40,80,0.15) 0%, transparent 55%),
+      repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(0,80,40,0.05) 49px, rgba(0,80,40,0.05) 50px),
+      repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(0,80,40,0.05) 49px, rgba(0,80,40,0.05) 50px);
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 5px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 18px;
+    margin-bottom: 12px;
+    text-shadow: var(--glow);
+    box-shadow: var(--glow);
+  }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(20px, 4vw, 34px);
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 2px;
+    text-shadow: 0 0 30px rgba(0,255,136,0.4);
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--dim);
+    letter-spacing: 3px;
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media(max-width: 800px) { .wrap { grid-template-columns: 1fr; } }
+
+  .full { grid-column: 1 / -1; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 18px;
+    text-shadow: var(--glow);
+  }
+
+  /* Zone Cards */
+  .zones-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: 12px;
+  }
+
+  .zone-card {
+    background: rgba(0,10,6,0.7);
+    border: 1px solid var(--border);
+    padding: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .zone-card.selected {
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+    background: rgba(0,255,136,0.06);
+  }
+
+  .zone-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+
+  .zone-stats { display: flex; gap: 10px; margin-bottom: 8px; }
+
+  .stat {
+    flex: 1;
+    text-align: center;
+    background: rgba(0,255,136,0.05);
+    border: 1px solid rgba(0,255,136,0.15);
+    padding: 5px 4px;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .stat-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .stat-val.cost { color: var(--warn); }
+  .stat-val.zero { color: var(--danger); }
+
+  .zone-rule {
+    font-size: 11px;
+    color: var(--dim);
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+
+  /* Energy Bar */
+  .energy-bar-wrap {
+    margin-bottom: 16px;
+  }
+
+  .bar-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+
+  .bar-labels strong { color: var(--accent); font-family: 'Orbitron', sans-serif; font-size: 13px; }
+
+  .bar-track {
+    height: 12px;
+    background: rgba(0,255,136,0.07);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #00aa55);
+    transition: width 0.5s ease;
+    box-shadow: 0 0 8px rgba(0,255,136,0.6);
+  }
+
+  .bar-fill.over { background: linear-gradient(90deg, var(--danger), #aa2200); }
+
+  /* Results Table */
+  .res-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .res-table th {
+    text-align: left;
+    color: var(--accent2);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+  .res-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(13,74,32,0.4);
+    color: var(--text);
+  }
+  .res-table tr:last-child td { border-bottom: none; }
+  .res-table .highlight { color: var(--accent); font-weight: 700; font-family: 'Orbitron', sans-serif; }
+  .res-table .total td { border-top: 1px solid var(--accent); color: #fff; font-weight: 700; }
+
+  /* Key Steps */
+  .key-steps { display: flex; flex-direction: column; gap: 12px; }
+
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: rgba(0,10,6,0.6);
+    border: 1px solid var(--border);
+    padding: 14px;
+  }
+
+  .step-num {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--accent);
+    min-width: 30px;
+    text-shadow: var(--glow);
+    line-height: 1;
+  }
+
+  .step-body {}
+  .step-title { font-size: 13px; color: #fff; font-weight: 700; margin-bottom: 4px; letter-spacing: 1px; }
+  .step-formula {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    color: var(--accent2);
+    background: rgba(0,212,255,0.06);
+    border: 1px solid rgba(0,212,255,0.2);
+    padding: 6px 12px;
+    display: inline-block;
+    margin: 6px 0;
+    letter-spacing: 1px;
+  }
+  .step-result { font-size: 13px; color: var(--dim); }
+  .step-result strong { color: var(--accent); }
+
+  /* Final Key */
+  .final-key-box {
+    text-align: center;
+    padding: 30px 20px;
+    background: rgba(0,255,136,0.04);
+    border: 2px solid var(--accent);
+    box-shadow: var(--glow), inset 0 0 40px rgba(0,255,136,0.03);
+    margin-top: 8px;
+  }
+
+  .final-key-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--dim);
+    margin-bottom: 14px;
+  }
+
+  .final-key-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(28px, 6vw, 52px);
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 6px;
+    text-shadow: 0 0 30px rgba(0,255,136,0.8), 0 0 60px rgba(0,255,136,0.3);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { text-shadow: 0 0 20px rgba(0,255,136,0.7), 0 0 50px rgba(0,255,136,0.2); }
+    50% { text-shadow: 0 0 40px rgba(0,255,136,1), 0 0 80px rgba(0,255,136,0.5); }
+  }
+
+  .tag-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    justify-content: center;
+  }
+
+  .tag {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+
+  .tag.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,255,136,0.08);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">⚡ LEVEL 4</div>
+  <h1>THE GRID OF VITAL ENERGY</h1>
+  <p class="subtitle">CENTRAL ENERGY COMMAND VAULT</p>
+</header>
+
+<div class="wrap">
+
+  <!-- Zone Cards -->
+  <div class="panel full">
+    <div class="panel-title">▸ ZONE DATA — 6 SECTORS</div>
+    <div class="zones-grid" id="zone-cards"></div>
+  </div>
+
+  <!-- Energy Usage -->
+  <div class="panel">
+    <div class="panel-title">▸ ENERGY ALLOCATION</div>
+    <div class="energy-bar-wrap">
+      <div class="bar-labels">
+        <span>USED: <strong id="used-kwh">0</strong> kWh</span>
+        <span>CAPACITY: <strong>20</strong> kWh</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" id="bar-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <table class="res-table" id="alloc-table">
+      <thead>
+        <tr>
+          <th>ZONE</th>
+          <th>BASE COST</th>
+          <th>EFFECTIVE COST</th>
+          <th>BASE BENEFIT</th>
+          <th>EFFECTIVE BENEFIT</th>
+        </tr>
+      </thead>
+      <tbody id="alloc-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Computation Steps -->
+  <div class="panel">
+    <div class="panel-title">▸ FINAL GRID VERIFICATION PROTOCOL</div>
+    <div class="key-steps" id="key-steps"></div>
+  </div>
+
+  <!-- Final Key -->
+  <div class="panel full">
+    <div class="panel-title">▸ UNLOCK CODE</div>
+    <div class="final-key-box">
+      <div class="final-key-label">NUMERIC ACCESS KEY</div>
+      <div class="final-key-value" id="final-key">—</div>
+      <div class="tag-grid" id="tag-grid"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Zone definitions ──────────────────────────────────────────────────────────
+const ZONES = [
+  {
+    id: 'A', name: 'Zone A', baseCost: 6, baseBenefit: 12,
+    rule: 'If activated before Zone B, reduce Zone B\'s cost 8→5'
+  },
+  {
+    id: 'B', name: 'Zone B', baseCost: 8, baseBenefit: 14,
+    rule: 'Costs 5 only if Zone A was already activated'
+  },
+  {
+    id: 'C', name: 'Zone C', baseCost: 5, baseBenefit: 9,
+    rule: 'If selected after Zone D, gains +4 benefit'
+  },
+  {
+    id: 'D', name: 'Zone D', baseCost: 7, baseBenefit: 13,
+    rule: 'Stabilizes nearby sectors (no direct numerical effect)'
+  },
+  {
+    id: 'E', name: 'Zone E', baseCost: 4, baseBenefit: 8,
+    rule: 'If selected together with Zone C, reduce Zone C\'s cost by 1'
+  },
+  {
+    id: 'F', name: 'Zone F', baseCost: 3, baseBenefit: 0,
+    rule: 'Consumes energy but provides no direct benefit'
+  }
+];
+
+const CAPACITY = 20;
+
+// ── Evaluate a subset given as sorted array of zone IDs ───────────────────────
+function evaluate(ids) {
+  const selected = new Set(ids);
+
+  // Compute effective costs and benefits
+  const costs = {};
+  const benefits = {};
+  ZONES.forEach(z => {
+    costs[z.id] = z.baseCost;
+    benefits[z.id] = z.baseBenefit;
+  });
+
+  // Rule: A before B → B costs 5 (order matters; we assume A listed before B)
+  if (selected.has('A') && selected.has('B')) {
+    costs['B'] = 5;
+  }
+
+  // Rule: C after D → C gains +4
+  if (selected.has('D') && selected.has('C')) {
+    benefits['C'] += 4;
+  }
+
+  // Rule: E with C → C cost -1
+  if (selected.has('E') && selected.has('C')) {
+    costs['C'] -= 1;
+  }
+
+  let totalCost = 0;
+  let totalBenefit = 0;
+  ids.forEach(id => {
+    totalCost += costs[id];
+    totalBenefit += benefits[id];
+  });
+
+  return { totalCost, totalBenefit, costs, benefits };
+}
+
+// ── Brute-force all 2^6 = 64 subsets ─────────────────────────────────────────
+function findOptimal() {
+  const ids = ZONES.map(z => z.id);
+  let best = null;
+
+  for (let mask = 0; mask < (1 << ids.length); mask++) {
+    const subset = ids.filter((_, i) => (mask >> i) & 1);
+    const result = evaluate(subset);
+    if (result.totalCost <= CAPACITY) {
+      if (!best || result.totalBenefit > best.totalBenefit ||
+         (result.totalBenefit === best.totalBenefit && result.totalCost < best.totalCost)) {
+        best = { subset, ...result };
+      }
+    }
+  }
+  return best;
+}
+
+// ── Digit sum helper ──────────────────────────────────────────────────────────
+function digitSum(n) {
+  return String(Math.abs(Math.floor(n))).split('').reduce((a, d) => a + parseInt(d), 0);
+}
+
+// ── Render Zone Cards ─────────────────────────────────────────────────────────
+function renderCards(selectedSet) {
+  const container = document.getElementById('zone-cards');
+  container.innerHTML = '';
+  ZONES.forEach(z => {
+    const card = document.createElement('div');
+    card.className = 'zone-card' + (selectedSet.has(z.id) ? ' selected' : '');
+    const benZero = z.baseBenefit === 0;
+    card.innerHTML = `
+      <div class="zone-name">${z.name}</div>
+      <div class="zone-stats">
+        <div class="stat">
+          <span class="stat-label">COST</span>
+          <span class="stat-val cost">${z.baseCost}</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">BENEFIT</span>
+          <span class="stat-val ${benZero ? 'zero' : ''}">${z.baseBenefit}</span>
+        </div>
+      </div>
+      <div class="zone-rule">${z.rule}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ── Render Allocation Table ───────────────────────────────────────────────────
+function renderAlloc(opt) {
+  const tbody = document.getElementById('alloc-body');
+  tbody.innerHTML = '';
+
+  opt.subset.forEach(id => {
+    const z = ZONES.find(z => z.id === id);
+    const effCost = opt.costs[id];
+    const effBen = opt.benefits[id];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="highlight">${z.name}</td>
+      <td>${z.baseCost} kWh</td>
+      <td style="color:var(--warn)">${effCost} kWh</td>
+      <td>${z.baseBenefit}</td>
+      <td style="color:var(--accent)">${effBen}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Total row
+  const tr = document.createElement('tr');
+  tr.className = 'total';
+  tr.innerHTML = `
+    <td>TOTAL</td>
+    <td>—</td>
+    <td style="color:var(--warn)">${opt.totalCost} kWh</td>
+    <td>—</td>
+    <td style="color:var(--accent)">${opt.totalBenefit}</td>
+  `;
+  tbody.appendChild(tr);
+
+  // Energy bar
+  const pct = Math.min((opt.totalCost / CAPACITY) * 100, 100);
+  const bar = document.getElementById('bar-fill');
+  bar.style.width = pct + '%';
+  bar.className = 'bar-fill' + (opt.totalCost > CAPACITY ? ' over' : '');
+  document.getElementById('used-kwh').textContent = opt.totalCost;
+}
+
+// ── Render Computation Steps ──────────────────────────────────────────────────
+function renderSteps(opt) {
+  const B = opt.totalBenefit;
+  const E = opt.totalCost;
+  const n = opt.subset.length;
+
+  const S = B + E + n;
+  const F = digitSum(B) * digitSum(E);
+  const K = Math.floor(S + (F / 3));
+  const syncConst = n - 1;
+  const finalKey = K + syncConst;
+  const unlockCode = finalKey + 'GRID';
+
+  const steps = [
+    {
+      num: '1',
+      title: 'Compute the Grid Sum',
+      formula: `S = B + E + n = ${B} + ${E} + ${n}`,
+      result: `S = <strong>${S}</strong>`
+    },
+    {
+      num: '2',
+      title: 'Compute the Stability Factor',
+      formula: `F = digitSum(${B}) × digitSum(${E}) = ${digitSum(B)} × ${digitSum(E)}`,
+      result: `F = <strong>${F}</strong>`
+    },
+    {
+      num: '3',
+      title: 'Generate the Numeric Access Key',
+      formula: `K = S + floor(F / 3) = ${S} + floor(${F} / 3) = ${S} + ${Math.floor(F/3)}`,
+      result: `K = <strong>${K}</strong>`
+    },
+    {
+      num: '4',
+      title: 'Add Zone Synchronization Constant',
+      formula: `Sync = n − 1 = ${n} − 1 = ${syncConst}  →  Final Key = ${K} + ${syncConst}`,
+      result: `Final Numeric Key = <strong>${finalKey}</strong>`
+    },
+    {
+      num: '5',
+      title: 'Generate Final Unlock Code',
+      formula: `Append "GRID" → ${finalKey} + GRID`,
+      result: `Unlock Code = <strong style="color:var(--accent);font-size:16px">${unlockCode}</strong>`
+    }
+  ];
+
+  const container = document.getElementById('key-steps');
+  container.innerHTML = '';
+  steps.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'step';
+    el.innerHTML = `
+      <div class="step-num">${s.num}</div>
+      <div class="step-body">
+        <div class="step-title">${s.title}</div>
+        <div class="step-formula">${s.formula}</div>
+        <div class="step-result">${s.result}</div>
+      </div>
+    `;
+    container.appendChild(el);
+  });
+
+  // Final key display
+  document.getElementById('final-key').textContent = unlockCode;
+
+  // Tags
+  const tagGrid = document.getElementById('tag-grid');
+  tagGrid.innerHTML = '';
+  [
+    `B = ${B}`, `E = ${E} kWh`, `n = ${n}`,
+    `S = ${S}`, `F = ${F}`, `K = ${K}`,
+    `SYNC = ${syncConst}`, `KEY = ${finalKey}`
+  ].forEach(t => {
+    const tag = document.createElement('div');
+    tag.className = 'tag active';
+    tag.textContent = t;
+    tagGrid.appendChild(tag);
+  });
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+const optimal = findOptimal();
+const selectedSet = new Set(optimal.subset);
+
+renderCards(selectedSet);
+renderAlloc(optimal);
+renderSteps(optimal);
+</script>
+</body>
+</html>

@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Level 5 — Critical Route Recovery</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050508;
+    --panel: #0a0a14;
+    --border: #1a1a4a;
+    --accent: #7b6fff;
+    --accent2: #ff6b6b;
+    --green: #00ff88;
+    --text: #c8c8ff;
+    --dim: #4a4a88;
+    --glow: 0 0 14px rgba(123,111,255,0.5);
+    --glow2: 0 0 14px rgba(0,255,136,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    padding: 30px 20px 60px;
+    background-image:
+      radial-gradient(ellipse at 15% 15%, rgba(60,40,180,0.15) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 85%, rgba(80,20,120,0.12) 0%, transparent 55%),
+      repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(40,40,100,0.06) 49px, rgba(40,40,100,0.06) 50px),
+      repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(40,40,100,0.06) 49px, rgba(40,40,100,0.06) 50px);
+  }
+
+  header { text-align: center; margin-bottom: 36px; }
+
+  .badge {
+    display: inline-block;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 5px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 18px;
+    margin-bottom: 12px;
+    text-shadow: var(--glow);
+    box-shadow: var(--glow);
+  }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(18px, 4vw, 32px);
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 2px;
+    text-shadow: 0 0 30px rgba(123,111,255,0.5);
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 3px;
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media(max-width: 800px) { .wrap { grid-template-columns: 1fr; } }
+  .full { grid-column: 1 / -1; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 18px;
+    text-shadow: var(--glow);
+  }
+
+  .matrix-wrap { overflow-x: auto; }
+
+  table { border-collapse: collapse; font-size: 12px; width: 100%; }
+
+  th, td {
+    width: 42px;
+    height: 32px;
+    text-align: center;
+    border: 1px solid rgba(26,26,74,0.8);
+  }
+
+  th {
+    color: var(--accent);
+    font-weight: normal;
+    letter-spacing: 1px;
+    background: rgba(123,111,255,0.06);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+  }
+
+  td { color: var(--dim); }
+  td.inf { color: #2a2a55; font-size: 16px; }
+  td.zero { color: #2a2a55; }
+  td.row-label {
+    color: var(--accent2);
+    font-weight: bold;
+    text-align: right;
+    padding-right: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+  }
+  td.on-path {
+    color: var(--green);
+    font-weight: bold;
+    background: rgba(0,255,136,0.08);
+    text-shadow: var(--glow2);
+  }
+
+  .steps-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 12px;
+    align-items: start;
+    background: rgba(5,5,15,0.6);
+    border: 1px solid var(--border);
+    padding: 12px;
+    animation: fadeIn 0.3s ease both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .step-num {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: var(--glow);
+  }
+
+  .step-title { color: #fff; font-size: 13px; margin-bottom: 5px; letter-spacing: 1px; }
+  .step-detail { color: var(--dim); font-size: 11px; line-height: 1.7; }
+  .step-detail .updated { color: var(--green); }
+
+  .path-display {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+  }
+
+  .path-node {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(123,111,255,0.2), rgba(60,40,180,0.2));
+    border: 1px solid var(--accent);
+    padding: 8px 16px;
+    box-shadow: var(--glow);
+    text-shadow: var(--glow);
+  }
+
+  .path-node.src { border-color: var(--accent2); box-shadow: 0 0 14px rgba(255,107,107,0.5); }
+  .path-node.dst { border-color: var(--green); box-shadow: var(--glow2); color: var(--green); }
+  .path-arrow { color: var(--dim); font-size: 18px; }
+
+  .cost-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,255,136,0.06);
+    border: 1px solid var(--green);
+    padding: 10px 20px;
+    margin-top: 6px;
+    box-shadow: var(--glow2);
+  }
+
+  .cost-label { font-size: 11px; color: var(--dim); letter-spacing: 2px; }
+  .cost-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--green);
+    text-shadow: var(--glow2);
+  }
+
+  .access-box {
+    text-align: center;
+    padding: 28px 20px;
+    background: rgba(123,111,255,0.04);
+    border: 2px solid var(--accent);
+    box-shadow: var(--glow), inset 0 0 40px rgba(123,111,255,0.03);
+  }
+
+  .access-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--dim);
+    margin-bottom: 14px;
+  }
+
+  .access-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(30px, 7vw, 58px);
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 8px;
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { text-shadow: 0 0 20px rgba(123,111,255,0.7); }
+    50% { text-shadow: 0 0 50px rgba(123,111,255,1), 0 0 80px rgba(123,111,255,0.4); }
+  }
+
+  .access-sub {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 2px;
+  }
+
+  .dist-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+  .dist-table th {
+    color: var(--accent);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-weight: 400;
+    background: none;
+    width: auto; height: auto;
+  }
+  .dist-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid rgba(26,26,74,0.4);
+    text-align: left;
+    width: auto; height: auto;
+    color: var(--text);
+  }
+  .dist-table tr:last-child td { border-bottom: none; }
+  .dist-table .hl { color: var(--green); font-weight: bold; }
+  .dist-table .nd { color: var(--accent2); font-family: 'Orbitron', sans-serif; font-size: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">⚡ LEVEL 5</div>
+  <h1>CRITICAL ROUTE RECOVERY</h1>
+  <p class="subtitle">DIJKSTRA'S SHORTEST PATH — Z2 → Z6</p>
+</header>
+
+<div class="wrap">
+
+  <div class="panel">
+    <div class="panel-title">▸ DISTANCE MATRIX (∞ = NO DIRECT LINK)</div>
+    <div class="matrix-wrap">
+      <table id="matrix-tbl"></table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">▸ FINAL SHORTEST DISTANCES FROM Z2</div>
+    <table class="dist-table">
+      <thead><tr><th>NODE</th><th>SHORTEST DIST</th><th>VIA</th></tr></thead>
+      <tbody id="dist-body"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">▸ DIJKSTRA EXECUTION TRACE</div>
+    <div class="steps-list" id="steps-list"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">▸ SHORTEST PATH RESULT</div>
+    <div class="path-display" id="path-display"></div>
+    <div class="cost-badge">
+      <span class="cost-label">MIN TRANSMISSION COST</span>
+      <span class="cost-value" id="cost-value">—</span>
+      <span class="cost-label">kWh</span>
+    </div>
+  </div>
+
+  <div class="panel full">
+    <div class="panel-title">▸ EMERGENCY ROUTING SEQUENCE — FINAL ACCESS CODE</div>
+    <div class="access-box">
+      <div class="access-label">CONCATENATED NODE IDENTIFIERS</div>
+      <div class="access-value" id="access-value">—</div>
+      <div class="access-sub" id="access-sub"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const INF = Infinity;
+const nodes = ['Z1','Z2','Z3','Z4','Z5','Z6','Z7'];
+const N = nodes.length;
+
+// Exact matrix from image
+//        Z1   Z2   Z3   Z4   Z5   Z6   Z7
+const W = [
+  [  0,   6,   9, INF,   3, INF,   4 ],  // Z1
+  [  6,   0,   5,   8,   2, INF, INF ],  // Z2
+  [  9,   5,   0,   4,   7,  12, INF ],  // Z3
+  [INF,   8,   4,   0,   6,   9,  10 ],  // Z4
+  [  3,   2,   7,   6,   0,  11,   8 ],  // Z5
+  [INF, INF,  12,   9,  11,   0,   3 ],  // Z6
+  [  4, INF, INF,  10,   8,   3,   0 ],  // Z7
+];
+
+// Verified paths from Z2:
+// Z2→Z5→Z1→Z7→Z6 = 2+3+4+3 = 12  ✓ SHORTEST
+// Z2→Z5→Z7→Z6    = 2+8+3   = 13
+// Z2→Z3→Z6       = 5+12    = 17
+// Z2→Z4→Z6       = 8+9     = 17
+
+const SRC = 1; // Z2
+const DST = 5; // Z6
+
+function renderMatrix(pathEdges) {
+  const tbl = document.getElementById('matrix-tbl');
+  let html = '<tr><th></th>';
+  nodes.forEach(n => html += `<th>${n}</th>`);
+  html += '</tr>';
+  W.forEach((row, r) => {
+    html += `<tr><td class="row-label">${nodes[r]}</td>`;
+    row.forEach((v, c) => {
+      const key = r + '-' + c;
+      if (v === INF)         html += `<td class="inf">∞</td>`;
+      else if (v === 0)      html += `<td class="zero">0</td>`;
+      else if (pathEdges.has(key)) html += `<td class="on-path">${v}</td>`;
+      else                   html += `<td>${v}</td>`;
+    });
+    html += '</tr>';
+  });
+  tbl.innerHTML = html;
+}
+
+function dijkstra(src) {
+  const dist = new Array(N).fill(INF);
+  const prev = new Array(N).fill(-1);
+  const visited = new Array(N).fill(false);
+  dist[src] = 0;
+  const stepLog = [];
+
+  for (let iter = 0; iter < N; iter++) {
+    let u = -1;
+    for (let i = 0; i < N; i++) {
+      if (!visited[i] && (u === -1 || dist[i] < dist[u])) u = i;
+    }
+    if (u === -1 || dist[u] === INF) break;
+    visited[u] = true;
+
+    const updates = [];
+    for (let v = 0; v < N; v++) {
+      if (W[u][v] !== INF && !visited[v]) {
+        const nd = dist[u] + W[u][v];
+        if (nd < dist[v]) {
+          const old = dist[v];
+          dist[v] = nd;
+          prev[v] = u;
+          updates.push({ v, old, newDist: nd });
+        }
+      }
+    }
+    stepLog.push({ iter: iter + 1, u, distU: dist[u], updates });
+  }
+  return { dist, prev, stepLog };
+}
+
+function getPath(prev, dst) {
+  const path = [];
+  let cur = dst;
+  while (cur !== -1) { path.unshift(cur); cur = prev[cur]; }
+  return path;
+}
+
+function renderSteps(stepLog) {
+  const container = document.getElementById('steps-list');
+  container.innerHTML = '';
+  stepLog.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'step-row';
+    div.style.animationDelay = `${(s.iter-1)*80}ms`;
+    const updHtml = s.updates.length === 0
+      ? '<span style="color:#2a2a55">No updates</span>'
+      : s.updates.map(u =>
+          `<span class="updated">→ ${nodes[u.v]}: ${u.old===INF?'∞':u.old} → ${u.newDist}</span>`
+        ).join('  ');
+    div.innerHTML = `
+      <div class="step-num">${s.iter}</div>
+      <div>
+        <div class="step-title">Finalize <span style="color:var(--accent2)">${nodes[s.u]}</span>
+          — dist = <span style="color:var(--accent)">${s.distU}</span></div>
+        <div class="step-detail">${updHtml}</div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function renderDistTable(dist, prev) {
+  const tbody = document.getElementById('dist-body');
+  tbody.innerHTML = '';
+  nodes.forEach((n, i) => {
+    const via = prev[i] !== -1 ? nodes[prev[i]] : (i === SRC ? 'SOURCE' : '—');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="nd">${n}</td>
+      <td class="${dist[i]===INF?'':'hl'}">${dist[i]===INF?'∞':dist[i]}</td>
+      <td style="color:var(--dim)">${via}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderPath(path, cost) {
+  const container = document.getElementById('path-display');
+  container.innerHTML = '';
+  path.forEach((idx, pos) => {
+    const chip = document.createElement('div');
+    chip.className = 'path-node' + (idx===SRC?' src':'') + (idx===DST?' dst':'');
+    chip.textContent = nodes[idx];
+    container.appendChild(chip);
+    if (pos < path.length - 1) {
+      const arr = document.createElement('span');
+      arr.className = 'path-arrow';
+      arr.textContent = '→';
+      container.appendChild(arr);
+    }
+  });
+  document.getElementById('cost-value').textContent = cost;
+}
+
+function renderAccessCode(path, cost) {
+  const nums = path.map(i => nodes[i].replace('Z',''));
+  const code = nums.join('');
+  document.getElementById('access-value').textContent = code;
+  document.getElementById('access-sub').textContent =
+    'PATH: ' + path.map(i => nodes[i]).join(' → ') +
+    '  |  TOTAL COST: ' + cost;
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+const { dist, prev, stepLog } = dijkstra(SRC);
+const path = getPath(prev, DST);
+
+const pathEdges = new Set();
+for (let i = 0; i < path.length - 1; i++) {
+  pathEdges.add(path[i]+'-'+path[i+1]);
+  pathEdges.add(path[i+1]+'-'+path[i]);
+}
+
+renderMatrix(pathEdges);
+renderSteps(stepLog);
+renderDistTable(dist, prev);
+renderPath(path, dist[DST]);
+renderAccessCode(path, dist[DST]);
+</script>
+</body>
+</html>
